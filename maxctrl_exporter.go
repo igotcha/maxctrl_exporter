@@ -23,6 +23,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -218,6 +219,24 @@ func (m *MaxScale) createMetricForPrometheus(metricsMap map[string]Metric, metri
 	)
 }
 
+// ipToInt converts an IP address string to an integer
+func ipToInt(ip string) int64 {
+	parts := strings.Split(ip, ".")
+	if len(parts) != 4 {
+		return 0
+	}
+
+	var result int64
+	for i := 0; i < 4; i++ {
+		part, err := strconv.ParseInt(parts[i], 10, 64)
+		if err != nil {
+			return 0
+		}
+		result = result<<8 + part
+	}
+	return result
+}
+
 func (m *MaxScale) parseServers(ch chan<- prometheus.Metric) error {
 	var servers Servers
 	err := m.getStatistics("/servers", &servers)
@@ -225,6 +244,18 @@ func (m *MaxScale) parseServers(ch chan<- prometheus.Metric) error {
 	if err != nil {
 		return err
 	}
+
+	// Find the current master node
+	var currentMasterIP string
+	for _, server := range servers.Data {
+		if strings.Contains(server.Attributes.State, "Master") {
+			currentMasterIP = server.Attributes.Parameters.Address
+			break
+		}
+	}
+
+	// Convert master IP to integer
+	masterID := ipToInt(currentMasterIP)
 
 	for _, server := range servers.Data {
 		serverID := server.ID
@@ -237,6 +268,10 @@ func (m *MaxScale) parseServers(ch chan<- prometheus.Metric) error {
 		normalizedStatus := "," + strings.Replace(server.Attributes.State, ", ", ",", -1) + ","
 		m.createMetricForPrometheus(m.serverMetrics, "server_up",
 			serverUp(normalizedStatus), ch, serverID, serverAddress, normalizedStatus)
+
+		// Add current master ID metric with master label
+		m.createMetricForPrometheus(m.serverMetrics, "server_current_master_id",
+			int(masterID), ch, serverID, serverAddress, currentMasterIP)
 	}
 
 	return nil

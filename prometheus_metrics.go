@@ -29,6 +29,7 @@ type Metric struct {
 var (
 	serverLabelNames         = []string{"server", "address"}
 	serverUpLabelNames       = []string{"server", "address", "status"}
+	serverMasterLabelNames   = []string{"server", "address", "master"}
 	serviceLabelNames        = []string{"name", "router"}
 	maxscaleStatusLabelNames = []string{}
 	statusLabelNames         = []string{"id"}
@@ -48,8 +49,9 @@ func newDesc(subsystem string, name string, help string, variableLabels []string
 // Exported MaxScale metrics for Prometheus
 var (
 	ServerMetrics = metrics{
-		"server_connections": newDesc("server", "connections", "Amount of connections to the server", serverLabelNames, prometheus.GaugeValue),
-		"server_up":          newDesc("server", "up", "Is the server up", serverUpLabelNames, prometheus.GaugeValue),
+		"server_connections":       newDesc("server", "connections", "Amount of connections to the server", serverLabelNames, prometheus.GaugeValue),
+		"server_up":                newDesc("server", "up", "Is the server up", serverUpLabelNames, prometheus.GaugeValue),
+		"server_current_master_id": newDesc("server", "current_master_id", "Current master node ID (IP address converted to integer)", serverMasterLabelNames, prometheus.GaugeValue),
 	}
 	ServiceMetrics = metrics{
 		"service_current_sessions": newDesc("service", "current_sessions", "Amount of sessions currently active", serviceLabelNames, prometheus.GaugeValue),
