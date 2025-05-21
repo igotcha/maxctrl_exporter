@@ -59,6 +59,7 @@ type MaxScale struct {
 	username              string
 	password              string
 	transport             *http.Transport
+	client                *http.Client
 	up                    prometheus.Gauge
 	totalScrapes          prometheus.Counter
 	serverMetrics         map[string]Metric
@@ -91,11 +92,14 @@ func NewExporter(url string, username string, password string, caCertificate str
 		RootCAs: rootCAs,
 	}}
 
+	client := &http.Client{Transport: transport}
+
 	return &MaxScale{
 		url:       url,
 		username:  username,
 		password:  password,
 		transport: transport,
+		client:    client,
 		up: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: Namespace,
 			Name:      "up",
@@ -181,8 +185,7 @@ func (m *MaxScale) getStatistics(path string, v interface{}) error {
 	}
 	req.SetBasicAuth(m.username, m.password)
 
-	client := &http.Client{Transport: m.transport}
-	resp, err := client.Do(req)
+	resp, err := m.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error while getting %v: %v", path, err)
 	}
