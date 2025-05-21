@@ -29,7 +29,7 @@ type Metric struct {
 var (
 	serverLabelNames         = []string{"server", "address"}
 	serverUpLabelNames       = []string{"server", "address", "status"}
-	serverMasterLabelNames   = []string{"server", "address", "master"}
+	serverMasterLabelNames   = []string{}
 	serviceLabelNames        = []string{"name", "router"}
 	maxscaleStatusLabelNames = []string{}
 	statusLabelNames         = []string{"id"}

@@ -259,6 +259,9 @@ func (m *MaxScale) parseServers(ch chan<- prometheus.Metric) error {
 
 	// Convert master IP to integer
 	masterID := ipToInt(currentMasterIP)
+	// Add current master ID metric
+	m.createMetricForPrometheus(m.serverMetrics, "server_current_master_id", int(masterID), ch)
+
 
 	for _, server := range servers.Data {
 		serverID := server.ID
@@ -271,10 +274,6 @@ func (m *MaxScale) parseServers(ch chan<- prometheus.Metric) error {
 		normalizedStatus := "," + strings.Replace(server.Attributes.State, ", ", ",", -1) + ","
 		m.createMetricForPrometheus(m.serverMetrics, "server_up",
 			serverUp(normalizedStatus), ch, serverID, serverAddress, normalizedStatus)
-
-		// Add current master ID metric with master label
-		m.createMetricForPrometheus(m.serverMetrics, "server_current_master_id",
-			int(masterID), ch, serverID, serverAddress, currentMasterIP)
 	}
 
 	return nil
